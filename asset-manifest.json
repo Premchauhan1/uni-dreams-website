@@ -1,0 +1,16 @@
+{
+  "files": {
+    "main.css": "/uni-dreams-website/static/css/main.5b121bba.css",
+    "main.js": "/uni-dreams-website/static/js/main.a881da37.js",
+    "static/js/453.1d844149.chunk.js": "/uni-dreams-website/static/js/453.1d844149.chunk.js",
+    "static/media/UNI.png": "/uni-dreams-website/static/media/UNI.9a441f6efc4ec15b067f.png",
+    "index.html": "/uni-dreams-website/index.html",
+    "main.5b121bba.css.map": "/uni-dreams-website/static/css/main.5b121bba.css.map",
+    "main.a881da37.js.map": "/uni-dreams-website/static/js/main.a881da37.js.map",
+    "453.1d844149.chunk.js.map": "/uni-dreams-website/static/js/453.1d844149.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.5b121bba.css",
+    "static/js/main.a881da37.js"
+  ]
+}
