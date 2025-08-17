@@ -14,7 +14,8 @@ const ServicesSection = () => {
     { id: 'testing', name: 'Testing & QA' },
     { id: 'content', name: 'Content' },
     { id: 'marketing', name: 'Marketing' },
-    { id: 'consulting', name: 'Consulting' }
+    { id: 'consulting', name: 'Consulting' },
+    { id: 'accessibility', name: 'Accessibility' }
   ];
 
   const services = [
@@ -164,7 +165,32 @@ const ServicesSection = () => {
         'Cultural Adaptation Reports',
         'Quality Assurance Certificates'
       ]
-    }
+    },
+    {
+      id: 7,
+      category: 'accessibility',
+      icon: '🌐',
+      title: 'Accessibility Services',
+      description: ' We ensure digital experiences are accessible to everyone, regardless of ability.',
+      duration: '2-4 Weeks',
+      fullDescription: 'At UNI Dream Solutions Pvt. Ltd., we believe that education is a right, not a privilege. Our Accessibility Services are designed to ensure that every learner—regardless of physical, cognitive, or technological limitations—can access, engage with, and benefit from our digital learning solutions.',
+      features: [
+        'Screen Reader Compatibility',
+        'Keyboard Navigation',
+        'Alt Text for Media',
+        'Captioning & Transcripts',
+        'Contrast & Font Adjustments',
+        'Multilingual Support',
+        'Custom Assistive Integrations',
+
+      ],
+      deliverables: [
+        'Accessibility Audits of existing learning platforms',
+        'Custom Course Design with accessibility built-in from day one',
+        'Consultation & Training for educators and content creators',
+        'Compliance Reporting to meet legal and institutional accessibility requirements'
+      ]
+    },
   ];
 
   const filteredServices = activeCategory === 'all' 
@@ -176,8 +202,56 @@ const ServicesSection = () => {
     return category ? category.name : '';
   };
 
+  // Create carousel items with clones for infinite loop
+  const createCarouselItems = () => {
+    if (filteredServices.length === 0) return [];
+    
+    const items = [];
+    
+    // If we have fewer items than visible slots, don't create clones
+    if (totalItems <= itemsPerSlide) {
+      return filteredServices.map((service, index) => ({
+        ...service,
+        isClone: false,
+        originalIndex: index
+      }));
+    }
+    
+    // Add clones of the last few items at the beginning
+    for (let i = totalItems - itemsPerSlide; i < totalItems; i++) {
+      items.push({
+        ...filteredServices[i],
+        isClone: true,
+        originalIndex: i,
+        cloneId: `start-${i}`
+      });
+    }
+    
+    // Add all real items
+    filteredServices.forEach((service, index) => {
+      items.push({
+        ...service,
+        isClone: false,
+        originalIndex: index
+      });
+    });
+    
+    // Add clones of the first few items at the end
+    for (let i = 0; i < itemsPerSlide; i++) {
+      items.push({
+        ...filteredServices[i],
+        isClone: true,
+        originalIndex: i,
+        cloneId: `end-${i}`
+      });
+    }
+    
+    return items;
+  };
+
   const getServiceImage = (category) => {
     const imageMap = {
+      'accessibility':'https://simplybuiltsites.com/wp-content/uploads/Check-The-Accessibility-Of-A-Website.jpg',
       'development': 'https://images.unsplash.com/photo-1517180102446-f3ece451e9d8?w=400&h=250&fit=crop&auto=format',
       'testing': 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&h=250&fit=crop&auto=format', 
       'content': 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=400&h=250&fit=crop&auto=format',
@@ -188,21 +262,95 @@ const ServicesSection = () => {
     return imageMap[category] || imageMap['all'];
   };
 
+  // Function to get the original service data for modal
+  const getOriginalService = (service) => {
+    if (service.isClone) {
+      // If it's a clone, find the original service
+      return filteredServices[service.originalIndex];
+    }
+    return service;
+  };
+
+  // Function to open modal with proper service data
+  const openModal = (service) => {
+    const originalService = getOriginalService(service);
+    console.log('Opening modal with service:', originalService); // Debug log
+    setSelectedService(originalService);
+  };
+
+  // Function to close modal
+  const closeModal = () => {
+    console.log('Closing modal'); // Debug log
+    setSelectedService(null);
+  };
+
   // Carousel functionality
-  const itemsPerSlide = 3; // Show 3 cards at once
-  const maxSlides = Math.ceil(filteredServices.length / itemsPerSlide);
+  const [itemsPerSlide, setItemsPerSlide] = useState(3); // Default: Show 3 cards at once
+  const totalItems = filteredServices.length;
+  const [isTransitioning, setIsTransitioning] = useState(true);
+
+  // Update itemsPerSlide based on screen size
+  useEffect(() => {
+    const updateItemsPerSlide = () => {
+      if (window.innerWidth <= 480) {
+        setItemsPerSlide(1); // Small mobile: 1 card
+      } else if (window.innerWidth <= 768) {
+        setItemsPerSlide(1); // Mobile: 1 card
+      } else if (window.innerWidth <= 1024) {
+        setItemsPerSlide(2); // Tablet: 2 cards
+      } else {
+        setItemsPerSlide(3); // Desktop: 3 cards
+      }
+    };
+
+    // Set initial value
+    updateItemsPerSlide();
+    
+    // Add event listener for window resize
+    window.addEventListener('resize', updateItemsPerSlide);
+    
+    // Cleanup
+    return () => window.removeEventListener('resize', updateItemsPerSlide);
+  }, []);
 
   const nextSlide = () => {
-    setCurrentSlide(prev => (prev + 1) % maxSlides);
+    if (isTransitioning && totalItems > itemsPerSlide) {
+      setCurrentSlide(prev => prev + 1);
+    }
   };
 
   const prevSlide = () => {
-    setCurrentSlide(prev => (prev - 1 + maxSlides) % maxSlides);
+    if (isTransitioning && totalItems > itemsPerSlide) {
+      setCurrentSlide(prev => prev - 1);
+    }
   };
 
   const goToSlide = (index) => {
-    setCurrentSlide(index);
+    if (isTransitioning && totalItems > itemsPerSlide) {
+      setCurrentSlide(index + totalItems); // Adjust for cloned items at the beginning
+    }
   };
+
+  // Handle infinite loop logic
+  useEffect(() => {
+    if (totalItems <= itemsPerSlide) return; // Don't apply infinite loop if we have few items
+    
+    if (currentSlide <= itemsPerSlide - 1) {
+      // We're in the cloned items at the beginning, jump to the real items at the end
+      setTimeout(() => {
+        setIsTransitioning(false);
+        setCurrentSlide(totalItems + currentSlide);
+        setTimeout(() => setIsTransitioning(true), 50);
+      }, 300);
+    } else if (currentSlide >= totalItems + itemsPerSlide) {
+      // We're in the cloned items at the end, jump to the real items at the beginning
+      setTimeout(() => {
+        setIsTransitioning(false);
+        setCurrentSlide(currentSlide - totalItems);
+        setTimeout(() => setIsTransitioning(true), 50);
+      }, 300);
+    }
+  }, [currentSlide, totalItems, itemsPerSlide]);
 
   // Auto-play carousel
   useEffect(() => {
@@ -211,12 +359,28 @@ const ServicesSection = () => {
     }, 5000); // Change slide every 5 seconds
 
     return () => clearInterval(interval);
-  }, [currentSlide, maxSlides]);
+  }, [isTransitioning]);
+
+  // Initialize carousel position
+  useEffect(() => {
+    const initialSlide = totalItems <= itemsPerSlide ? 0 : itemsPerSlide; // Start at the first real item
+    setCurrentSlide(initialSlide);
+    setIsTransitioning(false); // No transition on initial load
+    setTimeout(() => setIsTransitioning(true), 100);
+  }, []);
 
   // Reset slide when category changes
   useEffect(() => {
-    setCurrentSlide(0);
-  }, [activeCategory]);
+    const initialSlide = totalItems <= itemsPerSlide ? 0 : itemsPerSlide; // Start at the first real item
+    setCurrentSlide(initialSlide);
+    setIsTransitioning(false);
+    setTimeout(() => setIsTransitioning(true), 100);
+  }, [activeCategory, totalItems, itemsPerSlide]);
+
+  // Debug: Monitor selectedService changes
+  useEffect(() => {
+    console.log('selectedService changed:', selectedService);
+  }, [selectedService]);
 
   // Handle body scroll when modal opens/closes
   useEffect(() => {
@@ -267,6 +431,10 @@ const ServicesSection = () => {
       <div className="container">
         {/* Section Header */}
         <div className="section-header">
+        <div className="section-badge">
+                        <span className="badge-icon">🚀</span>
+                        <span>Our Services</span>
+                    </div>
           <h2 className="section-title">
             Unlimited access to <span className="text-gradient">Our solutions</span>
           </h2>
@@ -291,7 +459,7 @@ const ServicesSection = () => {
         {/* Services Carousel */}
         <div className="carousel-container">
           {/* Side Navigation Buttons */}
-          {maxSlides > 1 && (
+          {totalItems > itemsPerSlide && (
             <>
               <button 
                 className="carousel-side-btn prev-btn" 
@@ -319,79 +487,69 @@ const ServicesSection = () => {
             <div 
               className="services-carousel"
               style={{
-                transform: `translateX(-${currentSlide * 100}%)`
+                transform: `translateX(-${currentSlide * (100 / itemsPerSlide)}%)`,
+                transition: isTransitioning ? 'transform 0.3s ease-in-out' : 'none',
+                display: 'flex'
               }}
             >
-              {Array.from({ length: maxSlides }).map((_, slideIndex) => (
-                <div key={slideIndex} className="carousel-slide">
-                  {filteredServices
-                    .slice(slideIndex * itemsPerSlide, (slideIndex + 1) * itemsPerSlide)
-                    .map((service, index) => (
-                      <div 
-                        key={service.id} 
-                        className="service-card"
-                        onClick={() => setSelectedService(service)}
-                        style={{
-                          animationDelay: `${index * 0.1}s`
+              {createCarouselItems().map((service, index) => (
+                <div 
+                  key={service.isClone ? `${service.id}-${service.cloneId}` : service.id} 
+                  className="service-card"
+                  onClick={() => openModal(service)}
+                  style={{
+                    flex: `0 0 ${100 / itemsPerSlide}%`,
+                    animationDelay: `${(index % itemsPerSlide) * 0.1}s`
+                  }}
+                >
+                  <div className="card-header">
+                    <div className="service-image">
+                      <div className="image-placeholder"></div>
+                      <img 
+                        src={getServiceImage(service.category)}
+                        alt={service.title}
+                        className="service-bg-image"
+                        onLoad={(e) => {
+                          e.target.style.opacity = '1';
+                          e.target.parentElement.querySelector('.image-placeholder').style.opacity = '0';
                         }}
-                      >
-                        <div className="card-header">
-                          <div className="service-image">
-                            <div className="image-placeholder"></div>
-                            <img 
-                              src={getServiceImage(service.category)}
-                              alt={service.title}
-                              className="service-bg-image"
-                              onLoad={(e) => {
-                                e.target.style.opacity = '1';
-                                e.target.parentElement.querySelector('.image-placeholder').style.opacity = '0';
-                              }}
-                              onError={(e) => {
-                                e.target.src = 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=400&h=250&fit=crop&auto=format';
-                                e.target.onerror = null; // Prevent infinite loop
-                              }}
-                              style={{ opacity: 0 }}
-                            />
-                            <div className="image-overlay"></div>
-                            <div className="service-icon">
-                              {service.icon}
-                            </div>
-                            <div className="service-category-badge">
-                              {getCategoryName(service.category)}
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div className="card-body">
-                          <div className="service-header">
-                            <h3 className="service-title">{service.title}</h3>
-                            <div className="service-rating">
-                              <div className="stars">
-                                ⭐⭐⭐⭐⭐
-                              </div>
-                              <span className="rating-text">5.0</span>
-                            </div>
-                          </div>
-                          
-                          <p className="service-description">{service.description}</p>
-                          
-                          
-                          
-                          <div className="service-actions">
-                            <button 
-                              className="know-more-btn"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedService(service);
-                              }}
-                            >
-                              <span>Know More</span>
-                              <span className="btn-arrow">→</span>
-                            </button>
-                          </div>
-                        </div>
+                        onError={(e) => {
+                          e.target.src = 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=400&h=250&fit=crop&auto=format';
+                          e.target.onerror = null; // Prevent infinite loop
+                        }}
+                        style={{ opacity: 0 }}
+                      />
+                      <div className="image-overlay"></div>
+                      <div className="service-icon">
+                        {service.icon}
                       </div>
-                    ))}
+                      <div className="service-category-badge">
+                        {getCategoryName(service.category)}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="card-body">
+                    <div className="service-header">
+                      <h3 className="service-title">{service.title}</h3>
+                    </div>
+                    
+                    <p className="service-description">{service.description}</p>
+                    
+                    {/* Click Indicator */}
+                    <div className="click-indicator">
+                      <div className="indicator-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M7 17L17 7M17 7H7M17 7V17"/>
+                        </svg>
+                      </div>
+                      <span className="indicator-text">Click to know more</span>
+                    </div>
+                    
+                    <div className="service-actions">
+                      {/* Removed Know More button - users can click directly on cards */}
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
@@ -402,7 +560,7 @@ const ServicesSection = () => {
 
         {/* Service Detail Modal */}
         {selectedService && (
-          <div className="modal-overlay" onClick={() => setSelectedService(null)}>
+          <div className="modal-overlay" onClick={closeModal}>
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
               <div className="modal-header">
                 <div className="modal-icon">
@@ -417,7 +575,16 @@ const ServicesSection = () => {
                 </div>
                 <button 
                   className="modal-close"
-                  onClick={() => setSelectedService(null)}
+                  onClick={() => {
+                    closeModal();
+                    setTimeout(() => {
+                      const servicesSection = document.getElementById('services');
+                      if (servicesSection) {
+                        servicesSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        servicesSection.focus && servicesSection.focus();
+                      }
+                    }, 100);
+                  }}
                 >
                   ×
                 </button>
